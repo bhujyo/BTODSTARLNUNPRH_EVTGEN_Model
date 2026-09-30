@@ -1,0 +1,39 @@
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include "TFile.h"
+#include "TTree.h"
+#include "TBranch.h"
+#include "TCanvas.h"
+#include "TFrame.h"
+#include "TROOT.h"
+#include "TGraph.h"
+#include "TGraphErrors.h"
+#include "TF1.h"
+#include "TLegend.h"
+#include "TArrow.h"
+#include "TLatex.h"
+#include "TH1D.h"
+
+void root2txt(){
+
+  TFile *dstarlnu = new TFile("dstarlnu.root");
+  TTree *ntp = (TTree*)dstarlnu->Get("ntp");
+  float_t q2, ctd, ctl, chi;
+  ntp->SetBranchAddress("q2",&q2);
+  ntp->SetBranchAddress("ctd",&ctd);
+  ntp->SetBranchAddress("ctl",&ctl);
+  ntp->SetBranchAddress("chi",&chi);
+
+  Long64_t nentries = ntp->GetEntries();
+  
+  remove("evtgenData.txt");
+  ofstream MyFile("evtgenData.txt");
+
+  for(int i = 0; i < nentries; i++){
+    ntp->GetEntry(i);
+    MyFile << q2 << " " << ctd << "\n";
+  }
+
+  MyFile.close();
+}

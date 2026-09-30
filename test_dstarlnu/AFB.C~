@@ -1,0 +1,73 @@
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include "TFile.h"
+#include "TTree.h"
+#include "TBranch.h"
+#include "TCanvas.h"
+#include "TFrame.h"
+#include "TROOT.h"
+#include "TGraph.h"
+#include "TGraphErrors.h"
+#include "TF1.h"
+#include "TLegend.h"
+#include "TArrow.h"
+#include "TLatex.h"
+#include "TH1D.h"
+
+void AFB(){
+  TFile *dstarlnu = new TFile("dstarlnu.root");
+  TTree *ntp = (TTree*)dstarlnu->Get("ntp");
+  float_t q2, ctd, ctl, chi;
+  ntp->SetBranchAddress("q2",&q2);
+  ntp->SetBranchAddress("ctd",&ctd);
+  ntp->SetBranchAddress("ctl",&ctl);
+  ntp->SetBranchAddress("chi",&chi);
+  
+  Long64_t nentries = ntp->GetEntries();
+  double_t qmax = 11.0;
+  double_t bin_size = 1;
+  const int nbins = ceil(qmax/bin_size);
+  
+  double_t Np[11] = {};
+  double_t Nm[11] = {};
+  double_t AFB[11] = {};
+  double_t q[11] = {};
+
+  remove("AFBdata.txt");
+  ofstream MyFile("AFBdata.txt");
+  
+  for(int i = 0; i < nbins; i++){
+    q[i] = i*bin_size;
+  }
+  for(int i = 0; i < nentries; i++){
+    ntp->GetEntry(i);
+    int bin_num = floor(q2/bin_size);
+    
+    if(ctl < 0){
+      Nm[bin_num] = Nm[bin_num] + 1;
+    }
+    else if(ctl > 0){
+      Np[bin_num] = Np[bin_num] + 1;
+    }
+  }
+   
+  for(int i = 0; i < nbins; i++){
+    double_t N1 = Np[i];
+    double_t N2 = Nm[i];
+    double_t afb = (N1-N2)/(N1+N2);
+    if (!isnan(afb)){
+      AFB[i] = afb;
+      MyFile << "{" << (q[i]+q[i+1])/2 << "," << afb << "}" << "\n";
+    }
+  }
+  TGraph *Afb = new TGraph(nbins, q, AFB);
+  Afb->GetXaxis()->SetTitle("q2");
+  Afb->GetYaxis()->SetTitle("AFB");
+  Afb->GetXaxis()->CenterTitle();
+  Afb->GetYaxis()->CenterTitle();
+  Afb->SetTitle("AFB vs q2");
+  Afb->Draw("AC");
+
+  MyFile.close();
+}
